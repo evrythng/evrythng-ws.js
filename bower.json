@@ -1,0 +1,21 @@
+{
+  "name": "evrythng-ws",
+  "version": "1.0.0",
+  "main": "dist/evrythng-ws.js",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "plugins",
+    "src",
+    "*.html",
+    "Gruntfile.js"
+  ],
+  "license": "Apache-2.0",
+  "endpoint": "https://github.com/evrythng/evrythng-ws.js.git",
+  "dependencies": {
+    "bower-mqttws": "^1.0.0",
+    "evrythng": "^3.1.2"
+  }
+}

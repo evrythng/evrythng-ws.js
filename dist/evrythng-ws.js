@@ -109,61 +109,20 @@
           reject('WS Client is not connected.');
         }
 
-        client.subscribe($this.path, {
-          onSuccess: function () {
+        // Data has to be sent as a string
+        message = JSON.stringify($this.jsonify(message));
 
-            // Data has to be sent as a string
-            message = JSON.stringify($this.jsonify(message));
+        message = new Paho.MQTT.Message(message);
+        message.destinationName = $this.path;
 
-            message = new Paho.MQTT.Message(message);
-            message.destinationName = $this.path;
-
-            client.onMessageDelivered = function () {
-              if (successCallback) {
-                successCallback();
-              }
-              resolve();
-            };
-
-            client.send(message);
-
-          },
-          onFailure: function (err) {
-            console.error('Unable to subscribe to ' + $this.path);
-
-            if (errorCallback) {
-              errorCallback(err);
-            }
-
-            reject(err);
+        client.onMessageDelivered = function () {
+          if (successCallback) {
+            successCallback();
           }
-        });
-      });
-    });
-  }
+          resolve();
+        };
 
-  // Convert an Update/Create request into a WS publish message.
-  function _preparePublish(method, message, successCallback, errorCallback) {
-    var $this = this;
-
-    return new Promise(function (resolve, reject) {
-
-      var transferToPublish = {
-        request: function (options, cancel) {
-          // Cancel REST request
-          cancel();
-
-          // Use normalized data as the message to publish
-          _publishMessage.call($this, options.data, successCallback, errorCallback).then(resolve, reject);
-        }
-      };
-
-      if (typeof message === 'undefined') {
-        message = {};
-      }
-
-      $this[method](message, {
-        interceptors: [transferToPublish]
+        client.send(message);
       });
     });
   }

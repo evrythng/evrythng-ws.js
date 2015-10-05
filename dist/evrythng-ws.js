@@ -37,7 +37,7 @@
 }(this, function (Paho) {
   'use strict';
 
-  var version = '1.0.0';
+  var version = '1.0.1';
 
 
   // Setup default settings:
@@ -99,7 +99,7 @@
 
 
   // Publish a message on this resource's path WS topic.
-  function _publishMessage(message, successCallback, errorCallback) {
+  function _publishMessage(message, successCallback) {
     var $this = this;
 
     return _getClient(this.scope).then(function (client) {
@@ -253,7 +253,7 @@
 
           $this[method](message, {
             interceptors: [transferToPublish]
-          });
+          }).catch(function () {});
         });
       }
 

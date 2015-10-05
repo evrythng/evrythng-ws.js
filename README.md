@@ -29,8 +29,9 @@ See [Usage](#usage) below for more details.
 
 ##### Load from CDN
 
-Add the script tag into your HTML page:
+Add the script tags into your HTML page:
 
+    <script src="http://git.eclipse.org/c/paho/org.eclipse.paho.mqtt.javascript.git/plain/src/mqttws31.js"></script>
     <script src="//cdn.evrythng.net/toolkit/evrythng-js-sdk/evrythng-ws-1.0.0.min.js"></script>
  
 Or always get the last release:
@@ -91,28 +92,40 @@ WS.setup({
   clientIdPrefix: 'evtjs'
 });
 
-var operator = new EVT.Operator(OPERATOR_API_KEY);
-var thngResource = operator.thng('{thngId}');
+var device = new EVT.Device(DEVICE_API_KEY);
 
-// Subscribe to property updates of a particular thng
-thngResource.property().subscribe(function(update){
+// Subscribe to property updates on a device
+device.property().subscribe(function(update){
   console.log(update);
+});
+
+// Subscribe to explicit location changes
+device.location().subscribe(function(newLocation){
+  console.log(newLocation);
 });
 
 // Publish
 // Property updates
-thngResource.property('test').publish(123);
+device.property('test').publish(123);
 
 // Actions
-thngResource.action('scans').publish();
+device.action('scans').publish();
 
 // Thng
-thngResource.publish({
+device.publish({
   name: 'My new cool name'
 });
 
 // Unsubscribe to a subscribed topic
-thngResource.property().unsubscribe();
+device.property().unsubscribe();
+
+
+// Or using any other scope
+var operator = new EVT.Operator(OPERATOR_API_KEY;
+
+operator.product('{productId}').property().subscribe(function(update){
+  console.log(update);
+});
 
 ...
 ```

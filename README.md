@@ -32,7 +32,7 @@ See [Usage](#usage) below for more details.
 Add the script tags into your HTML page:
 
     <script src="http://git.eclipse.org/c/paho/org.eclipse.paho.mqtt.javascript.git/plain/src/mqttws31.js"></script>
-    <script src="//cdn.evrythng.net/toolkit/evrythng-js-sdk/evrythng-ws-1.0.1.min.js"></script>
+    <script src="//cdn.evrythng.net/toolkit/evrythng-js-sdk/evrythng-ws-1.0.2.min.js"></script>
  
 Or always get the last release:
 
@@ -41,7 +41,7 @@ Or always get the last release:
     
 For HTTPS you need to use:
 
-    <script src="//d10ka0m22z5ju5.cloudfront.net/toolkit/evrythng-js-sdk/evrythng-ws-1.0.1.min.js"></script>
+    <script src="//d10ka0m22z5ju5.cloudfront.net/toolkit/evrythng-js-sdk/evrythng-ws-1.0.2.min.js"></script>
     <script src="//d10ka0m22z5ju5.cloudfront.net/toolkit/evrythng-js-sdk/evrythng-ws.js"></script>
     <script src="//d10ka0m22z5ju5.cloudfront.net/toolkit/evrythng-js-sdk/evrythng-ws.min.js"></script>
 
@@ -52,15 +52,15 @@ For HTTPS you need to use:
 ```javascript
 requirejs.config({
     paths: {
-        'mqttws': '../bower_components/bower-mqttws/mqttws31',
+        'bower-mqttws': '../bower_components/bower-mqttws/mqttws31',
         'evrythng': '../bower_components/evrythng/dist/evrythng',
         'evrythng-ws': '../bower_components/evrythng-ws/dist/evrythng-ws'
     },
     shim: {
-      'mqttws': {
+      'bower-mqttws': {
         'exports': 'Paho'
       },
-      'evrythng': ['mqttws']
+      'evrythng': ['bower-mqttws']
     }
 });
     
@@ -88,7 +88,8 @@ EVT.use(EVT.WS);
 // Use different settings (below are defaults)
 WS.setup({
   apiUrl: 'wss://ws.evrythng.com:443/mqtt',
-  keepAliveInterval: 60,
+  reconnectPeriod: 1000,
+  keepAliveInterval: 50,
   clientIdPrefix: 'evtjs'
 });
 

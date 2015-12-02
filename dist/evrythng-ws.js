@@ -25,7 +25,7 @@
   if (typeof define === 'function' && define.amd) {
 
     // AMD.
-    define(['mqttws'], factory);
+    define(['bower-mqttws'], factory);
 
   } else {
 
@@ -37,20 +37,25 @@
 }(this, function (Paho) {
   'use strict';
 
-  var version = '1.0.1';
+  var version = '1.0.2';
 
 
   // Setup default settings:
 
   // - _**apiUrl**: EVRYTHNG URL for the WS server_
+  // - ***reconnectPeriod**: Connection retry timeout*
   // - _**keepAliveInterval**: Longest period of time which broker and client can
   // live without sending a message_
   // - _**clientIdPrefix**: Prefix in randomly generated unique ID_
   var defaultSettings = {
     apiUrl: 'wss://ws.evrythng.com:443/mqtt',
-    keepAliveInterval: 60,
+    reconnectPeriod: 1000,
+    keepAliveInterval: 50,
     clientIdPrefix: 'evtjs'
   };
+
+  var connectPromiseMap = {},
+    subscribeMap = {};
 
   // Generate unique client ID for WS connection.
   function _generateClientId(prefix) {
@@ -65,7 +70,11 @@
   function _getClient(scope) {
     var settings = EVTWsPlugin.settings;
 
-    return new Promise (function (resolve, reject) {
+    if (connectPromiseMap[scope.apiKey]) {
+      return connectPromiseMap[scope.apiKey];
+    }
+
+    connectPromiseMap[scope.apiKey] = new Promise (function (resolve, reject) {
       if (_isClientConnected(scope)) {
 
         // Return existing client if exists and is connected.
@@ -84,17 +93,36 @@
           password: scope.apiKey,
           keepAliveInterval: settings.keepAliveInterval,
           onSuccess: function () {
+            client.onConnectionLost = function () {
+
+              // Wait 1 second before reconnecting, to avoid
+              // hammering the server with connection requests...
+              setTimeout(function () {
+                Object.keys(subscribeMap[scope.apiKey]).forEach(function (path) {
+
+                  // Re-subscribe to the topics we were subscribed to.
+                  subscribeMap[scope.apiKey][path]();
+                });
+              }, settings.reconnectPeriod);
+
+              delete connectPromiseMap[scope.apiKey];
+            };
+
             scope.wsClient = client;
             resolve(scope.wsClient);
           },
           onFailure: function (error) {
             console.error('Unable to connect to WS server: ' +
               host + ', please check and try again');
+
+            delete connectPromiseMap[scope.apiKey];
             reject(error);
           }
         });
       }
     });
+
+    return connectPromiseMap[scope.apiKey];
   }
 
 
@@ -127,6 +155,22 @@
     });
   }
 
+  function _addSubscription(scope, path, subscription) {
+    if (!subscribeMap[scope.apiKey]) {
+      subscribeMap[scope.apiKey] = {};
+    }
+
+    if (!subscribeMap[scope.apiKey][path]) {
+      subscribeMap[scope.apiKey][path] = subscription;
+    }
+  }
+
+  function _removeSubscription(scope, path) {
+    if (subscribeMap[scope.apiKey]) {
+      delete subscribeMap[scope.apiKey][path];
+    }
+  }
+
   var EVTWsPlugin = {
     version: version,
 
@@ -151,6 +195,7 @@
     },
 
     install: function (Resource, Action) {
+      connectPromiseMap = {};
 
       // Subscribe to the current resource path topic. Create client if needed.
       // Message callback is called all the time a new message is received on that topic.
@@ -161,10 +206,14 @@
 
         var $this = this;
 
-        return _getClient(this.scope).then(function (client) {
+        return _getClient($this.scope).then(function (client) {
           return new Promise (function (resolve, reject) {
             client.subscribe($this.path, {
               onSuccess: function () {
+
+                // Store all the subscriptions.
+                _addSubscription($this.scope, $this.path, subscribe.bind($this, messageCallback));
+
                 client.onMessageArrived = function (msg) {
                   var response = msg.payloadString;
 
@@ -204,10 +253,20 @@
 
         return new Promise (function (resolve, reject) {
           if (!_isClientConnected($this.scope)) {
+            var connectErr = new Error('MQTT Client is not connected.');
+
+            if (errorCallback) {
+              errorCallback(connectErr);
+            }
+
             reject('WS Client is not connected.');
           } else {
             $this.scope.wsClient.unsubscribe($this.path, {
               onSuccess: function () {
+
+                // Remove subscription from the history.
+                _removeSubscription($this.scope, $this.path);
+
                 if (successCallback) {
                   successCallback();
                 }

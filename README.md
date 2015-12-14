@@ -32,7 +32,7 @@ See [Usage](#usage) below for more details.
 Add the script tags into your HTML page:
 
     <script src="http://git.eclipse.org/c/paho/org.eclipse.paho.mqtt.javascript.git/plain/src/mqttws31.js"></script>
-    <script src="//cdn.evrythng.net/toolkit/evrythng-js-sdk/evrythng-ws-1.0.2.min.js"></script>
+    <script src="//cdn.evrythng.net/toolkit/evrythng-js-sdk/evrythng-ws-1.0.3.min.js"></script>
  
 Or always get the last release:
 
@@ -41,7 +41,7 @@ Or always get the last release:
     
 For HTTPS you need to use:
 
-    <script src="//d10ka0m22z5ju5.cloudfront.net/toolkit/evrythng-js-sdk/evrythng-ws-1.0.2.min.js"></script>
+    <script src="//d10ka0m22z5ju5.cloudfront.net/toolkit/evrythng-js-sdk/evrythng-ws-1.0.3.min.js"></script>
     <script src="//d10ka0m22z5ju5.cloudfront.net/toolkit/evrythng-js-sdk/evrythng-ws.js"></script>
     <script src="//d10ka0m22z5ju5.cloudfront.net/toolkit/evrythng-js-sdk/evrythng-ws.min.js"></script>
 
@@ -89,7 +89,7 @@ EVT.use(EVT.WS);
 WS.setup({
   apiUrl: 'wss://ws.evrythng.com:443/mqtt',
   reconnectPeriod: 1000,
-  keepAliveInterval: 50,
+  keepAlive: 50,
   clientIdPrefix: 'evtjs'
 });
 

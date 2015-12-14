@@ -1,3 +1,16 @@
+# v1.0.3 (14-12-2015)
+
+## Changes
+
+- **keepAliveInterval**: renamed setting to keepAlive for consistency with MQTT plugin. 
+Old setting still accepted with deprecation warning.
+
+## Bug fixes
+
+- **Persistent reconnect** - Once connection is lost, keep trying to connect every
+*EVT.WS.settings.reconnectPeriod* milliseconds.
+- **Multiple subscriptions** - Fix incorrect handling of multiple subscriptions.
+
 # v1.0.2 (02-12-2015)
 
 ## Bug fixes

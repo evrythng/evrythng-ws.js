@@ -37,25 +37,26 @@
 }(this, function (Paho) {
   'use strict';
 
-  var version = '1.0.2';
+  var version = '1.0.3';
 
 
   // Setup default settings:
 
   // - _**apiUrl**: EVRYTHNG URL for the WS server_
   // - ***reconnectPeriod**: Connection retry timeout*
-  // - _**keepAliveInterval**: Longest period of time which broker and client can
+  // - _**keepAlive**: Longest period of time which broker and client can
   // live without sending a message_
   // - _**clientIdPrefix**: Prefix in randomly generated unique ID_
   var defaultSettings = {
     apiUrl: 'wss://ws.evrythng.com:443/mqtt',
     reconnectPeriod: 1000,
-    keepAliveInterval: 50,
+    keepAlive: 50,
     clientIdPrefix: 'evtjs'
   };
 
   var connectPromiseMap = {},
-    subscribeMap = {};
+    subscribeMap = {},
+    messageCallbackMap = {};
 
   // Generate unique client ID for WS connection.
   function _generateClientId(prefix) {
@@ -68,58 +69,92 @@
 
   // Get an existent or create a new WS client for the specified scope.
   function _getClient(scope) {
-    var settings = EVTWsPlugin.settings;
 
     if (connectPromiseMap[scope.apiKey]) {
       return connectPromiseMap[scope.apiKey];
     }
 
-    connectPromiseMap[scope.apiKey] = new Promise (function (resolve, reject) {
+    connectPromiseMap[scope.apiKey] = new Promise(function (resolve, reject) {
+
+      var settings = EVTWsPlugin.settings,
+        host = settings.apiUrl,
+        reconnectInterval = null,
+        wsClientId = _generateClientId(settings.clientIdPrefix),
+        client;
+
+
+      // Reset connection promise.
+      // If there was a previous client, keep try reconnecting.
+      function _cleanUp(error) {
+        delete connectPromiseMap[scope.apiKey];
+
+        if (!scope.wsClient) {
+          reject(error);
+        } else {
+
+          // Try to reconnect in intervals
+          if(!reconnectInterval){
+            reconnectInterval = setInterval(function () {
+              try {
+                client.connect(_getConnectOptions());
+              } catch (e) {}
+            }, settings.reconnectPeriod);
+          }
+
+        }
+      }
+
+      // Run whenever the client is (re)connected.
+      function _initClient() {
+        // Clear reconnect interval.
+        if (reconnectInterval) {
+          clearInterval(reconnectInterval);
+        }
+
+        // Restore subscriptions on reconnect.
+        if (subscribeMap[scope.apiKey]) {
+          Object.keys(subscribeMap[scope.apiKey]).forEach(function (path) {
+            subscribeMap[scope.apiKey][path]();
+          });
+        }
+
+        // One client per scope.
+        scope.wsClient = client;
+        resolve(scope.wsClient);
+      }
+
+      // Paho.MQTT.Client changes the connect options into
+      // some invalid ones (WTF?). So we need to generate
+      // them all the time.
+      function _getConnectOptions() {
+        return {
+          userName: 'authorization',
+          password: scope.apiKey,
+          keepAliveInterval: settings.keepAlive,
+          onSuccess: _initClient,
+          onFailure: _cleanUp
+        };
+      }
+
+      function _onMessageArrived(msg) {
+        messageCallbackMap[scope.apiKey][msg.destinationName](msg);
+      }
+
+
       if (_isClientConnected(scope)) {
 
         // Return existing client if exists and is connected.
         resolve(scope.wsClient);
+
       } else {
 
-        // Create a new client and store in scope.
-        var client = null,
-          host = settings.apiUrl,
-          wsClientId = _generateClientId(settings.clientIdPrefix);
-
+        // Create a new WS client.
         client = new Paho.MQTT.Client(host, wsClientId);
-
-        client.connect({
-          userName: 'authorization',
-          password: scope.apiKey,
-          keepAliveInterval: settings.keepAliveInterval,
-          onSuccess: function () {
-            client.onConnectionLost = function () {
-
-              // Wait 1 second before reconnecting, to avoid
-              // hammering the server with connection requests...
-              setTimeout(function () {
-                Object.keys(subscribeMap[scope.apiKey]).forEach(function (path) {
-
-                  // Re-subscribe to the topics we were subscribed to.
-                  subscribeMap[scope.apiKey][path]();
-                });
-              }, settings.reconnectPeriod);
-
-              delete connectPromiseMap[scope.apiKey];
-            };
-
-            scope.wsClient = client;
-            resolve(scope.wsClient);
-          },
-          onFailure: function (error) {
-            console.error('Unable to connect to WS server: ' +
-              host + ', please check and try again');
-
-            delete connectPromiseMap[scope.apiKey];
-            reject(error);
-          }
-        });
+        client.connect(_getConnectOptions());
+        client.onConnectionLost = _cleanUp;
+        client.onMessageArrived = _onMessageArrived;
       }
+
     });
 
     return connectPromiseMap[scope.apiKey];
@@ -127,15 +162,11 @@
 
 
   // Publish a message on this resource's path WS topic.
-  function _publishMessage(message, successCallback) {
+  function _publishMessage(message, successCallback, errorCallback) {
     var $this = this;
 
     return _getClient(this.scope).then(function (client) {
-      return new Promise(function (resolve, reject) {
-
-        if (!_isClientConnected($this.scope)) {
-          reject('WS Client is not connected.');
-        }
+      return new Promise(function (resolve) {
 
         // Data has to be sent as a string
         message = JSON.stringify($this.jsonify(message));
@@ -152,6 +183,12 @@
 
         client.send(message);
       });
+    }, function (error) {
+      if (errorCallback) {
+        errorCallback(error);
+      }
+
+      return Promise.reject(error);
     });
   }
 
@@ -171,6 +208,22 @@
     }
   }
 
+  function _addMessageCallback(scope, path, messageCallback) {
+    if (!messageCallbackMap[scope.apiKey]) {
+      messageCallbackMap[scope.apiKey] = {};
+    }
+
+    if (!messageCallbackMap[scope.apiKey][path]) {
+      messageCallbackMap[scope.apiKey][path] = messageCallback;
+    }
+  }
+
+  function _removeMessageCallback(scope, path) {
+    if (messageCallbackMap[scope.apiKey]) {
+      delete messageCallbackMap[scope.apiKey][path];
+    }
+  }
+
   var EVTWsPlugin = {
     version: version,
 
@@ -183,6 +236,14 @@
         // Override default settings with new ones
         for (var i in customSettings) {
           if (customSettings.hasOwnProperty(i)) {
+
+            // TODO deprecate
+            if (i === 'keepAliveInterval') {
+              console.warn('[EvrythngJS WS] keepAliveInterval option has been deprecated. Use keepAlive instead.');
+              this.settings.keepAlive = customSettings[i];
+              continue;
+            }
+
             this.settings[i] = customSettings[i];
           }
         }
@@ -207,14 +268,15 @@
         var $this = this;
 
         return _getClient($this.scope).then(function (client) {
-          return new Promise (function (resolve, reject) {
+          return new Promise(function (resolve, reject) {
             client.subscribe($this.path, {
               onSuccess: function () {
 
                 // Store all the subscriptions.
                 _addSubscription($this.scope, $this.path, subscribe.bind($this, messageCallback));
 
-                client.onMessageArrived = function (msg) {
+                // Store all the message callbacks.
+                _addMessageCallback($this.scope, $this.path, function (msg) {
                   var response = msg.payloadString;
 
                   // Try to parse as JSON and then to the corresponding resource class.
@@ -224,7 +286,7 @@
                   }
 
                   messageCallback(response);
-                };
+                });
 
                 if (successCallback) {
                   successCallback(client);
@@ -232,10 +294,7 @@
 
                 resolve(client);
               },
-              onFailure: function(err) {
-                console.error('Unable to subscribe to the topic: ' +
-                  $this.path + ', please check and try again.');
-
+              onFailure: function (err) {
                 if (errorCallback) {
                   errorCallback(err);
                 }
@@ -244,14 +303,20 @@
               }
             });
           });
+        }, function (error) {
+          if (errorCallback) {
+            errorCallback(error);
+          }
+
+          return Promise.reject(error);
         });
       }
 
       // Unsubscribe from this resource's path WS topic.
-      function unsubscribe (successCallback, errorCallback) {
+      function unsubscribe(successCallback, errorCallback) {
         var $this = this;
 
-        return new Promise (function (resolve, reject) {
+        return new Promise(function (resolve, reject) {
           if (!_isClientConnected($this.scope)) {
             var connectErr = new Error('MQTT Client is not connected.');
 
@@ -266,6 +331,9 @@
 
                 // Remove subscription from the history.
                 _removeSubscription($this.scope, $this.path);
+
+                // Remove message callback from the history.
+                _removeMessageCallback($this.scope, $this.path);
 
                 if (successCallback) {
                   successCallback();
@@ -288,15 +356,15 @@
       }
 
       // Convert an Update/Create request into a MQTT publish message.
-      function publish (message, successCallback, errorCallback) {
+      function publish(message, successCallback, errorCallback) {
         var $this = this;
 
-        if(typeof message === 'undefined'){
+        if (typeof message === 'undefined') {
           message = {};
         }
 
         // Action is special, as it publishes on POST
-        var  method = this.class === Action['class'] ? 'create' : 'update';
+        var method = this.class === Action['class'] ? 'create' : 'update';
 
         return new Promise(function (resolve, reject) {
 
@@ -312,7 +380,14 @@
 
           $this[method](message, {
             interceptors: [transferToPublish]
-          }).catch(function () {});
+          }).catch(function (err) {
+
+            // If promise was reject without being cancelled bubble up.
+            if (!err.cancelled) {
+              throw err;
+            }
+
+          });
         });
       }
 

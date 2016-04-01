@@ -1,3 +1,43 @@
+# v2.0.0 (01-04-2016)
+
+## Breaking changes
+
+- **mqtt.js dependency**: MQTT over Websockets using _mqtt.js_ instead of 
+[_Eclipse Paho MQTTWS_](http://git.eclipse.org/c/paho/org.eclipse.paho.mqtt.javascript.git/tree/src/mqttws31.js), 
+for maintainability and consistency with MQTT plugin.
+
+## Migrating from v1.x
+
+- If using AMD (RequireJS) to load evrythng.js, the configuration of the dependencies changed from:
+
+```javascript
+requirejs.config({
+    paths: {
+        'bower-mqttws': '../bower_components/bower-mqttws/mqttws31',
+        'evrythng': '../bower_components/evrythng/dist/evrythng',
+        'evrythng-ws': '../bower_components/evrythng-ws/dist/evrythng-ws'
+    },
+    shim: {
+      'bower-mqttws': {
+        'exports': 'Paho'
+      },
+      'evrythng': ['bower-mqttws']
+    }
+});
+```
+
+To:
+
+```javascript
+requirejs.config({
+    paths: {
+        'mqtt': '../bower_components/mqttjs-browserified/dist/mqtt',
+        'evrythng': '../bower_components/evrythng/dist/evrythng',
+        'evrythng-ws': '../bower_components/evrythng-ws/dist/evrythng-ws'
+    }
+});
+```
+
 # v1.0.3 (14-12-2015)
 
 ## Changes

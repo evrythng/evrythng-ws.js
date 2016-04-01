@@ -3,7 +3,8 @@
 **evrythng-ws.js** is an extension plugin to be used with [evrythng.js](https://github.com/evrythng/evrythng.js) or 
 [evrythng-extended.js](https://github.com/evrythng/evrythng-extended.js) JS libraries.
 
-It adds WebSockets support to any resource, allowing to *publish*, *subscribe* and *unsubscribe* to the resource's topics easily.
+It adds [MQTT over WebSockets](http://www.hivemq.com/blog/mqtt-essentials-special-mqtt-over-websockets) support to 
+any resource, allowing to *publish*, *subscribe* and *unsubscribe* to the resource's topics easily.
 
 **evrythng-ws.js** is available as a Bower package and uses [bower-mqttws](https://github.com/TheRyanBurke/bower-mqttws) library as a dependency.
 
@@ -19,10 +20,10 @@ The Bower package is [AMD](http://requirejs.org/docs/whyamd.html)-compatible. Th
 it asynchronously using tools like [Require.js](http://requirejs.org/) or simply dropping the script tag 
 into your HTML page:
 
-    <script src="bower_components/bower-mqttws/mqttws31.js"></script>
+    <script src="bower_components/mqttjs-browserified/dist/mqtt.js"></script>
     <script src="bower_components/evrythng-ws/dist/evrythng-ws.js"></script>
 
-**evrythng-ws.js** depends on [bower-mqttws](https://github.com/TheRyanBurke/bower-mqttws) external lib, 
+**evrythng-ws.js** depends on [mqtt.js](https://www.npmjs.com/package/mqtt) external lib, 
 which is installed automatically.
 
 See [Usage](#usage) below for more details.
@@ -31,8 +32,8 @@ See [Usage](#usage) below for more details.
 
 Add the script tags into your HTML page:
 
-    <script src="http://git.eclipse.org/c/paho/org.eclipse.paho.mqtt.javascript.git/plain/src/mqttws31.js"></script>
-    <script src="//cdn.evrythng.net/toolkit/evrythng-js-sdk/evrythng-ws-1.0.3.min.js"></script>
+    <script src="//cdn.rawgit.com/reitzemaj/mqttjs-browserified/master/dist/mqtt.js"></script>
+    <script src="//cdn.evrythng.net/toolkit/evrythng-js-sdk/evrythng-ws-2.0.0.min.js"></script>
  
 Or always get the last release:
 
@@ -41,7 +42,7 @@ Or always get the last release:
     
 For HTTPS you need to use:
 
-    <script src="//d10ka0m22z5ju5.cloudfront.net/toolkit/evrythng-js-sdk/evrythng-ws-1.0.3.min.js"></script>
+    <script src="//d10ka0m22z5ju5.cloudfront.net/toolkit/evrythng-js-sdk/evrythng-ws-2.0.0.min.js"></script>
     <script src="//d10ka0m22z5ju5.cloudfront.net/toolkit/evrythng-js-sdk/evrythng-ws.js"></script>
     <script src="//d10ka0m22z5ju5.cloudfront.net/toolkit/evrythng-js-sdk/evrythng-ws.min.js"></script>
 
@@ -52,15 +53,9 @@ For HTTPS you need to use:
 ```javascript
 requirejs.config({
     paths: {
-        'bower-mqttws': '../bower_components/bower-mqttws/mqttws31',
+        'mqtt': '../bower_components/mqttjs-browserified/dist/mqtt',
         'evrythng': '../bower_components/evrythng/dist/evrythng',
         'evrythng-ws': '../bower_components/evrythng-ws/dist/evrythng-ws'
-    },
-    shim: {
-      'bower-mqttws': {
-        'exports': 'Paho'
-      },
-      'evrythng': ['bower-mqttws']
     }
 });
     

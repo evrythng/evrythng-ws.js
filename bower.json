@@ -1,6 +1,6 @@
 {
   "name": "evrythng-ws",
-  "version": "1.0.3",
+  "version": "2.0.0",
   "main": "dist/evrythng-ws.js",
   "ignore": [
     "**/.*",
@@ -15,7 +15,7 @@
   "license": "Apache-2.0",
   "endpoint": "https://github.com/evrythng/evrythng-ws.js.git",
   "dependencies": {
-    "bower-mqttws": "^1.0.0",
-    "evrythng": "^3.4.1"
+    "mqttjs-browserified": "~1.6.1",
+    "evrythng": "^3.4.3"
   }
 }

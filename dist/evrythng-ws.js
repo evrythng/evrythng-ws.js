@@ -37,7 +37,7 @@
 }(this, function (mqtt) {
   'use strict';
 
-  var version = '2.0.0';
+  var version = '2.0.1';
 
 
   // Setup default settings:
@@ -192,7 +192,9 @@
 
   function _removeSubscription(scope, path) {
     var apiKey = scope.apiKey,
-      idx = subscribeMap[apiKey].indexOf(path);
+      subscriptions = subscribeMap[apiKey],
+      has = Boolean(subscriptions && subscriptions.length),
+      idx = has ? subscriptions.indexOf(path) : -1;
 
     if (idx >= 0) {
       subscribeMap[apiKey].splice(idx, 1);

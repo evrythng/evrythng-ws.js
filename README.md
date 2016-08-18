@@ -6,7 +6,7 @@
 It adds [MQTT over WebSockets](http://www.hivemq.com/blog/mqtt-essentials-special-mqtt-over-websockets) support to 
 any resource, allowing to *publish*, *subscribe* and *unsubscribe* to the resource's topics easily.
 
-**evrythng-ws.js** is available as a Bower package and uses [bower-mqttws](https://github.com/TheRyanBurke/bower-mqttws) library as a dependency.
+**evrythng-ws.js** is available as a Bower package and uses [mqtt.js](https://www.npmjs.com/package/mqtt) library as a dependency.
 
 ## Installation
 
@@ -33,7 +33,7 @@ See [Usage](#usage) below for more details.
 Add the script tags into your HTML page:
 
     <script src="//cdn.rawgit.com/reitzemaj/mqttjs-browserified/master/dist/mqtt.js"></script>
-    <script src="//cdn.evrythng.net/toolkit/evrythng-js-sdk/evrythng-ws-2.0.0.min.js"></script>
+    <script src="//cdn.evrythng.net/toolkit/evrythng-js-sdk/evrythng-ws-2.0.1.min.js"></script>
  
 Or always get the last release:
 
@@ -42,7 +42,7 @@ Or always get the last release:
     
 For HTTPS you need to use:
 
-    <script src="//d10ka0m22z5ju5.cloudfront.net/toolkit/evrythng-js-sdk/evrythng-ws-2.0.0.min.js"></script>
+    <script src="//d10ka0m22z5ju5.cloudfront.net/toolkit/evrythng-js-sdk/evrythng-ws-2.0.1.min.js"></script>
     <script src="//d10ka0m22z5ju5.cloudfront.net/toolkit/evrythng-js-sdk/evrythng-ws.js"></script>
     <script src="//d10ka0m22z5ju5.cloudfront.net/toolkit/evrythng-js-sdk/evrythng-ws.min.js"></script>
 
@@ -130,7 +130,7 @@ operator.product('{productId}').property().subscribe(function(update){
 
 ## Documentation
 
-Check all the available subscriptions on the [EVRYTHNG Pubsub documentation](https://dashboard.evrythng.com/developers/apidoc/pubsub).
+Check all the available subscriptions on the [EVRYTHNG Pubsub documentation](https://developers.evrythng.com/docs/pubsub).
 
 ## Source Maps
 

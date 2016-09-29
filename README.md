@@ -33,7 +33,7 @@ See [Usage](#usage) below for more details.
 Add the script tags into your HTML page:
 
     <script src="//cdn.rawgit.com/reitzemaj/mqttjs-browserified/master/dist/mqtt.js"></script>
-    <script src="//cdn.evrythng.net/toolkit/evrythng-js-sdk/evrythng-ws-2.0.1.min.js"></script>
+    <script src="//cdn.evrythng.net/toolkit/evrythng-js-sdk/evrythng-ws-2.0.2.min.js"></script>
  
 Or always get the last release:
 
@@ -42,7 +42,7 @@ Or always get the last release:
     
 For HTTPS you need to use:
 
-    <script src="//d10ka0m22z5ju5.cloudfront.net/toolkit/evrythng-js-sdk/evrythng-ws-2.0.1.min.js"></script>
+    <script src="//d10ka0m22z5ju5.cloudfront.net/toolkit/evrythng-js-sdk/evrythng-ws-2.0.2.min.js"></script>
     <script src="//d10ka0m22z5ju5.cloudfront.net/toolkit/evrythng-js-sdk/evrythng-ws.js"></script>
     <script src="//d10ka0m22z5ju5.cloudfront.net/toolkit/evrythng-js-sdk/evrythng-ws.min.js"></script>
 
@@ -79,51 +79,73 @@ EVT.use(EVT.WS);
 
 #### General
 
+Use specific settings (below are defaults):
+
 ```javascript
-// Use different settings (below are defaults)
 WS.setup({
   apiUrl: 'wss://ws.evrythng.com:443/mqtt',
   reconnectPeriod: 1000,
   keepAlive: 50,
   clientIdPrefix: 'evtjs'
 });
+```
 
+Create a Device scope:
+
+```
 var device = new EVT.Device(DEVICE_API_KEY);
+```
 
-// Subscribe to property updates on a device
-device.property().subscribe(function(update){
+Subscribe to property updates on a device:
+
+```javascript
+device.property().subscribe(function(update) {
   console.log(update);
 });
+```
 
-// Subscribe to explicit location changes
-device.location().subscribe(function(newLocation){
+Subscribe to explicit location changes:
+
+```javascript
+device.location().subscribe(function(newLocation) {
   console.log(newLocation);
 });
+```
 
-// Publish
-// Property updates
-device.property('test').publish(123);
+Publish property updates:
 
-// Actions
+```javascript
+device.property('key').publish(value);
+```
+
+Create an action:
+
+```javascript
 device.action('scans').publish();
+```
 
-// Thng
+Update a Thng:
+
+```javascript
 device.publish({
   name: 'My new cool name'
 });
+```
 
-// Unsubscribe to a subscribed topic
+Unsubscribe to a subscribed topic:
+
+```javascript
 device.property().unsubscribe();
+```
 
+Alternatively use the Operator scope:
 
-// Or using any other scope
+```javascript
 var operator = new EVT.Operator(OPERATOR_API_KEY;
 
-operator.product('{productId}').property().subscribe(function(update){
+operator.product('{productId}').property().subscribe(function(update) {
   console.log(update);
 });
-
-...
 ```
 
 ---

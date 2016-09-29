@@ -1,3 +1,9 @@
+# v2.0.2 (29-09-2016)
+
+## Bug fixes
+
+- **Subscribe** - Fix multiple subscriptions not being handled correctly.
+
 # v2.0.1 (18-08-2016)
 
 ## Bug fixes

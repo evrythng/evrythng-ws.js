@@ -37,7 +37,7 @@
 }(this, function (mqtt) {
   'use strict';
 
-  var version = '2.0.1';
+  var version = '2.0.2';
 
 
   // Setup default settings:
@@ -90,10 +90,11 @@
       }
 
       function _initClient() {
+
         // Restore subscriptions on reconnect.
         if (subscribeMap[scope.apiKey]) {
-          subscribeMap[scope.apiKey].forEach(function (topic) {
-            client.subscribe(topic);
+          Object.keys(subscribeMap[scope.apiKey]).forEach(function (path) {
+            client.subscribe(path);
           });
         }
 
@@ -130,6 +131,10 @@
         // accept the connection (e.g. authorization).
         client.on('error', _cleanUp);
 
+        // One message handler per client.
+        client.on('message', function (path, message) {
+          _onMessage(scope.apiKey, path, message);
+        });
       }
 
     });
@@ -178,26 +183,27 @@
     });
   }
 
-  function _addSubscription(scope, path) {
-    var apiKey = scope.apiKey;
-
-    if (!subscribeMap[apiKey]) {
-      subscribeMap[apiKey] = [];
+  function _addSubscription(scope, path, onMessage) {
+    if (!subscribeMap[scope.apiKey]) {
+      subscribeMap[scope.apiKey] = {};
     }
 
-    if (subscribeMap[apiKey].indexOf(path) < 0) {
-      subscribeMap[apiKey].push(path);
+    if (!subscribeMap[scope.apiKey][path]) {
+      subscribeMap[scope.apiKey][path] = [];
     }
+
+    subscribeMap[scope.apiKey][path].push(onMessage);
   }
 
   function _removeSubscription(scope, path) {
-    var apiKey = scope.apiKey,
-      subscriptions = subscribeMap[apiKey],
-      has = Boolean(subscriptions && subscriptions.length),
-      idx = has ? subscriptions.indexOf(path) : -1;
+    delete subscribeMap[scope.apiKey][path];
+  }
 
-    if (idx >= 0) {
-      subscribeMap[apiKey].splice(idx, 1);
+  function _onMessage(apiKey, path, message) {
+    if (subscribeMap[apiKey][path]) {
+      subscribeMap[apiKey][path].forEach(function (onMessage) {
+        onMessage(message);
+      });
     }
   }
 
@@ -252,45 +258,33 @@
             function subscriptionHandler(err) {
               if (err) {
 
-                // Failed to subscribe
+                // Failed to subscribe.
                 if (errorCallback) {
                   errorCallback(err);
                 }
+
                 reject(err);
 
               } else {
 
-                // Store all subscriptions. We are going to
-                // restore them on reconnect.
-                _addSubscription($this.scope, $this.path);
+                // Store all subscriptions.
+                _addSubscription($this.scope, $this.path, function (message) {
 
-                // Attach handler for any incoming message on this client
-                client.on('message', function (topic, message) {
-                  if ($this.path === topic) {
+                  // Incoming as Buffer.
+                  var response = message.toString();
 
-                    // Incoming as Buffer
-                    var response = message.toString();
+                  // Try to parse as JSON and then to the corresponding resource class.
+                  try {
+                    response = $this.parse(JSON.parse(response));
+                  } catch (e) {}
 
-                    // Try to parse as JSON and then to the corresponding resource class.
-                    try {
-                      response = $this.parse(JSON.parse(response));
-                    } catch (e) {}
-
-                    messageCallback(response);
-
-                  }
-                });
-
-                client.on('error', function (error) {
-                  if (errorCallback) {
-                    errorCallback(error);
-                  }
-                  reject(error);
+                  messageCallback(response);
                 });
 
                 if (successCallback) {
                   successCallback(client);
                 }
+
                 resolve(client);
               }
             }
@@ -298,6 +292,7 @@
             client.subscribe($this.path, subscriptionHandler);
           });
         }).catch(function (err) {
+
           if (errorCallback) {
             errorCallback(err);
           }

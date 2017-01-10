@@ -37,7 +37,7 @@
 }(this, function (mqtt) {
   'use strict';
 
-  var version = '2.0.2';
+  var version = '2.1.0';
 
 
   // Setup default settings:
@@ -68,7 +68,8 @@
   }
 
   // Get an existent or create a new WS client for the specified scope.
-  function _getClient(scope) {
+  function _getClient(scope, connectOptions) {
+    connectOptions = connectOptions || {};
 
     if (connectPromiseMap[scope.apiKey]) {
       return connectPromiseMap[scope.apiKey];
@@ -86,6 +87,8 @@
         if (!scope.wsClient) {
           client.end();
           reject(error);
+        } else {
+          delete scope.wsClient;
         }
       }
 
@@ -106,7 +109,7 @@
       if (_isClientConnected(scope)) {
 
         // Return existing client if exists and is connected.
-        resolve(scope.mqttClient);
+        resolve(scope.wsClient);
 
       } else {
 
@@ -114,12 +117,12 @@
         var settings = EVTWsPlugin.settings,
           mqttOptions = {
             username: 'authorization',
-            password: scope.apiKey,
+            password: connectOptions.authorization || scope.apiKey,
             clientId: _generateClientId(settings.clientIdPrefix),
             keepalive: settings.keepAlive,
             reconnectPeriod: settings.reconnectPeriod
           },
-          client = mqtt.connect(settings.apiUrl, mqttOptions);
+          client = mqtt.connect(connectOptions.apiUrl || settings.apiUrl, mqttOptions);
 
         client.on('connect', _initClient);
 
@@ -144,10 +147,10 @@
 
 
   // Publish a message on this resource's path topic.
-  function _publishMessage(message, successCallback, errorCallback) {
+  function _publishMessage(message, connectOptions, successCallback, errorCallback) {
     var $this = this;
 
-    return _getClient(this.scope).then(function (client) {
+    return _getClient(this.scope, connectOptions).then(function (client) {
       return new Promise(function (resolve, reject) {
 
         function publishHandler(err) {
@@ -196,11 +199,13 @@
   }
 
   function _removeSubscription(scope, path) {
-    delete subscribeMap[scope.apiKey][path];
+    if (subscribeMap[scope.apiKey]) {
+      delete subscribeMap[scope.apiKey][path];
+    }
   }
 
   function _onMessage(apiKey, path, message) {
-    if (subscribeMap[apiKey][path]) {
+    if (subscribeMap[apiKey] && subscribeMap[apiKey][path]) {
       subscribeMap[apiKey][path].forEach(function (onMessage) {
         onMessage(message);
       });
@@ -222,14 +227,6 @@
         // Override default settings with new ones
         for (var i in customSettings) {
           if (customSettings.hasOwnProperty(i)) {
-
-            // TODO deprecate
-            if (i === 'keepAliveInterval') {
-              console.warn('[EvrythngJS WS] keepAliveInterval option has been deprecated. Use keepAlive instead.');
-              this.settings.keepAlive = customSettings[i];
-              continue;
-            }
-
             this.settings[i] = customSettings[i];
           }
         }
@@ -241,18 +238,25 @@
       return this.settings;
     },
 
-    install: function (Resource, Action) {
+    install: function (Resource, Action, Utils) {
 
       // Subscribe to the current resource path topic. Create client if needed.
       // Message callback is called all the time a new message is received on that topic.
-      function subscribe(messageCallback, successCallback, errorCallback) {
+      function subscribe(messageCallback, connectOptions, successCallback, errorCallback) {
         if (Object.prototype.toString.call(messageCallback) != '[object Function]') {
           throw new TypeError('Message callback missing.');
         }
 
+        // Connect options is optional.
+        if(Utils.isFunction(connectOptions)){
+          errorCallback = successCallback;
+          successCallback = connectOptions;
+          connectOptions = {};
+        }
+
         var $this = this;
 
-        return _getClient($this.scope).then(function (client) {
+        return _getClient($this.scope, connectOptions).then(function (client) {
           return new Promise(function (resolve, reject) {
 
             function subscriptionHandler(err) {
@@ -345,11 +349,18 @@
 
 
       // Convert an Update/Create request into a MQTT publish message.
-      function publish(message, successCallback, errorCallback) {
+      function publish(message, connectOptions, successCallback, errorCallback) {
         var $this = this;
 
         if (typeof message === 'undefined') {
           message = {};
+        }
+
+        // Connect options is optional.
+        if(Utils.isFunction(connectOptions)){
+          errorCallback = successCallback;
+          successCallback = connectOptions;
+          connectOptions = {};
         }
 
         // Action is special, as it publishes on POST
@@ -363,7 +374,8 @@
               cancel();
 
               // Use normalized data as the message to publish
-              _publishMessage.call($this, options.data, successCallback, errorCallback).then(resolve, reject);
+              _publishMessage.call($this, options.data, connectOptions, successCallback, errorCallback)
+                .then(resolve, reject);
             }
           };
 
@@ -391,7 +403,7 @@
   };
 
   // Modules that this plugin requires. Injected into the install method.
-  EVTWsPlugin.$inject = ['resource', 'entity/action'];
+  EVTWsPlugin.$inject = ['resource', 'entity/action', 'utils'];
 
   return EVTWsPlugin;
 

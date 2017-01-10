@@ -1,6 +1,6 @@
 {
   "name": "evrythng-ws",
-  "version": "2.0.2",
+  "version": "2.1.0",
   "main": "dist/evrythng-ws.js",
   "ignore": [
     "**/.*",
@@ -16,6 +16,6 @@
   "endpoint": "https://github.com/evrythng/evrythng-ws.js.git",
   "dependencies": {
     "mqttjs-browserified": "~1.6.1",
-    "evrythng": "^3.7.0"
+    "evrythng": "^4.2.0"
   }
 }

@@ -1,14 +1,25 @@
+# v2.1.0 (10-01-2017)
+
+## Features
+
+- **Options**: Allow to pass `connectOptions` to the `subscribe` and `publish` methods 
+to override resource authentication/url.
+
+## Bug fixes
+
+- **Unsubscribe**: Correct handling of empty subscriptions map.
+
 # v2.0.2 (29-09-2016)
 
 ## Bug fixes
 
-- **Subscribe** - Fix multiple subscriptions not being handled correctly.
+- **Subscribe**: Fix multiple subscriptions not being handled correctly.
 
 # v2.0.1 (18-08-2016)
 
 ## Bug fixes
 
-- **Unsubscribe** - Fix subscription not being removed correctly on unsubscribe.
+- **Unsubscribe**: Fix subscription not being removed correctly on unsubscribe.
 
 # v2.0.0 (01-04-2016)
 

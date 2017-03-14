@@ -33,12 +33,12 @@ See [Usage](#usage) below for more details.
 Add the script tags into your HTML page:
 
     <script src="//cdn.rawgit.com/reitzemaj/mqttjs-browserified/master/dist/mqtt.js"></script>
-    <script src="//cdn.evrythng.net/toolkit/evrythng-js-sdk/evrythng-ws-2.1.0.min.js"></script>
+    <script src="//cdn.evrythng.com/toolkit/evrythng-js-sdk/evrythng-ws-2.1.0.min.js"></script>
  
 Or always get the last release:
 
-    <script src="//cdn.evrythng.net/toolkit/evrythng-js-sdk/evrythng-ws.js"></script>
-    <script src="//cdn.evrythng.net/toolkit/evrythng-js-sdk/evrythng-ws.min.js"></script>
+    <script src="//cdn.evrythng.com/toolkit/evrythng-js-sdk/evrythng-ws.js"></script>
+    <script src="//cdn.evrythng.com/toolkit/evrythng-js-sdk/evrythng-ws.min.js"></script>
     
 For HTTPS you need to use:
 

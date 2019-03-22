@@ -1,0 +1,10 @@
+{
+  "name": "evrythng-ws",
+  "version": "2.1.0",
+  "main": "dist/evrythng-ws.js",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "mqttjs-browserified": "~1.6.1",
+    "evrythng": "^4.2.0"
+  }
+}
